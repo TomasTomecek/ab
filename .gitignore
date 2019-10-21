@@ -3,3 +3,4 @@ tests/data/basic_playbook_with_volume.retry
 contrib/ab-pod.yml
 .coverage.*
 .coverage*
+.tox/
