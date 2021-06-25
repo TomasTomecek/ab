@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1alpha1
+kind: TaskRun
+metadata:
+  name: ab_task_run
+spec:
+  taskRef:
+    name: ab_task
+  inputs:
+    resources:
+      - name: source
+        resourceRef:
+          type: git
+          params:
+          - name: url
+            value: https://github.com/my-user/my-repo
+  outputs:
+    resources:
+    - name: image
+      resourceSpec:
+        type: image
+        params:
+        - name:  
+          value: http://link-to-my-image-registry

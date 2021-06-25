@@ -1,0 +1,48 @@
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: ab_task
+spec:
+  inputs:
+    params:
+    - name: AB_IMAGE
+      description: The location to ansible-bender image.
+      default: http://link-to-ab-image
+    - name: PLAYBOOK
+      description: Path to Ansible playbook to build the image. 
+      default: ./playbook.yaml
+
+    resources:
+    - name: source
+      type: git
+
+  outputs:
+    resources:
+    - name: image
+      type: image
+
+  steps:
+  - name: build
+    image: $(inputs.params.AB_IMAGE)
+    workingDir: /workspace/source
+    command: ['ansible-bender', 'build', '$(inputs.params.PLAYBOOK)']
+    volumeMounts:
+    - name: varlibcontainers
+      mountPath: /var/lib/containers
+    securityContext:
+      privileged: true
+
+  - name: push
+    image: $(inputs.params.AB_IMAGE)
+    workingDir: /workspace/source
+    command: ['ansible-bender', 'push', '$(outputs.resources.image.url)']
+    volumeMounts:
+    - name: varlibcontainers
+      mountPath: /var/lib/containers
+    securityContext:
+      privileged: true
+
+  volumes:
+  - name: varlibcontainers
+    emptyDir: {}
