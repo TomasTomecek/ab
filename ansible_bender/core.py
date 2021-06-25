@@ -207,10 +207,18 @@ class AnsibleRunner:
             tmp_pb_path = os.path.join(tmp, "p.yaml")
             with open(self.pb, "r") as fd_r:
                 pb_dict = yaml.safe_load(fd_r)
+                host_present = False
             for idx, doc in enumerate(pb_dict):
-                host = doc["hosts"]
-                logger.debug("play[%s], host = %s", idx, host)
-                doc["hosts"] = self.builder.ansible_host
+                try:
+                    host = doc["hosts"]
+                    host_present = True
+                except:
+                    continue
+                finally:
+                    if host_present:
+                    logger.debug("play[%s], host = %s", idx, host)
+                    doc["hosts"] = self.builder.ansible_host
+                    break
             with open(tmp_pb_path, "w") as fd:
                 yaml.safe_dump(pb_dict, fd)
             playbook_base = os.path.basename(self.pb).split(".", 1)[0]
