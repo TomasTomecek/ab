@@ -4,8 +4,11 @@ Test Application class
 import os
 import shutil
 import subprocess
+from pathlib import Path
 
+import pytest
 import yaml
+from ansible_bender.exceptions import ABBuildUnsuccesful
 from flexmock import flexmock
 
 from ansible_bender.api import Application
@@ -298,3 +301,44 @@ def test_pb_with_role(build, application):
         assert len(build.layers) == 8
     finally:
         run_cmd(["buildah", "rmi", im], ignore_status=True, print_output=True)
+
+
+@pytest.mark.parametrize(
+    "playbook_content",
+    (
+        "- hosts: all\n"
+        "  roles:\n"
+        "  - train\n",
+
+        "- hosts: all\n"
+        "  tasks:\n"
+        "  - import_role:\n"
+        "      name: train\n",
+
+        "- hosts: all\n"
+        "  tasks:\n"
+        "  - include_role:\n"
+        "      name: train\n"
+    )
+)
+def test_pb_with_role_fail(build, application, tmp_path, playbook_content):
+    test_roles_path = tmp_path / "roles"
+    shutil.copytree(roles_dir, test_roles_path)
+    test_pb_path: Path = tmp_path / Path(role_pb_path).name
+    test_pb_path.write_text(playbook_content)
+    im = "image-built-with-role-should-fail"
+    build.playbook_path = str(test_pb_path)
+    build.target_image = im
+    os.environ["ANSIBLE_ROLES_PATH"] = str(test_roles_path)
+
+    # this is the test scenario: make the build fail
+    os.unlink(test_roles_path / "train" / "files" / "ticket")
+
+    with pytest.raises(ABBuildUnsuccesful):
+        application.build(build)
+
+    for layer in build.layers:
+        if layer.base_image_id:
+            assert not layer.cached  # when the task failed, all layers must not be cached
+        else:
+            assert layer.cached  # the is base image
