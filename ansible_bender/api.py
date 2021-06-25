@@ -125,6 +125,10 @@ class Application:
             b.final_layer_id = builder.commit(build.target_image, final_image=True)
 
             if not b.is_layering_on():
+                if b.squash:
+                    # reset layers if squashing
+                    b.layers = []
+                    # we could also skip committing when squashing but we would lose caching
                 self.record_progress(b, None, b.final_layer_id)
             else:
                 self.db.record_build(b)

@@ -1,0 +1,19 @@
+---
+- project:
+    name: ansible-bender
+    check:
+      jobs:
+        - ansible-bender-tests
+    gate:
+      jobs:
+        - ansible-bender-tests
+
+- job:
+    name: ansible-bender-tests
+    parent: base
+    description: Run basic ansible-bender tests
+    run: run-tests.yaml
+    nodeset:
+      nodes:
+        - name: test-node
+          label: cloud-fedora-30

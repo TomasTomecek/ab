@@ -296,3 +296,16 @@ def test_two_build_vols(tmpdir, target_image):
 
     assert vol_spec1 in build_volumes
     assert vol_spec2 in build_volumes
+
+
+def test_squash(target_image, tmpdir):
+    cmd = ["build", "--squash", basic_playbook_path, base_image, target_image]
+
+    ab(cmd, str(tmpdir))
+
+    p_inspect_data = json.loads(subprocess.check_output(["podman", "inspect", "-t", "image", target_image]))[0]
+    assert len(p_inspect_data["RootFS"]["Layers"]) == 1
+
+    cmd = ["inspect", "--json"]
+    ab_inspect_data = json.loads(ab(cmd, str(tmpdir), return_output=True))
+    assert len(ab_inspect_data["layers"]) == 1
